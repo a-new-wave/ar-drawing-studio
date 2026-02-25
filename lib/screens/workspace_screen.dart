@@ -318,13 +318,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.straighten, color: Colors.white70, size: 14),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${(_imageScale * 100).toStringAsFixed(0)}cm',
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(width: 10),
                             const Icon(Icons.rotate_right, color: Colors.white70, size: 14),
                             const SizedBox(width: 5),
                             Text(

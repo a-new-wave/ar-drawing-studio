@@ -8,9 +8,8 @@ A premium AR tracing and drawing application for iOS and Android, inspired by th
 - **Gaze-Following Preview**: Real-time ghost preview that follows your phone's gaze before placement.
 - **Smart Orientation**: Automatically lays images flat on horizontal surfaces.
 - **Precision Controls**:
-  - **Pinch-to-Scale**: Resize images from 5cm to 150cm.
   - **Two-Finger Rotation**: Twist to rotate images with degree-level precision.
-  - **Live Metadata**: Real-time readout of current size and rotation.
+  - **Live Metadata**: Real-time readout of current rotation angle.
   - **Vertical Opacity Slider**: Fine-tune transparency for perfect tracing.
 - **Stable Anchoring**: Once placed, images are permanently locked to the real world, resisting AR drift.
 - **Liquid Glass UI**: Stunning, translucent interface with glassmorphism effects and modern typography.
