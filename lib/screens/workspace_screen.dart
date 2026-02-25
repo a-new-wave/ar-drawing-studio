@@ -268,63 +268,65 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
             child: ARViewWrapper(onARViewCreated: _onARViewCreated),
           ),
 
-          // Placement Reticle (Center of screen)
+          // Placement Reticle (Apple Measure Style)
           if (_isFloating)
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: _hasPlaneFocus ? AppColors.neonBlue : Colors.white54, 
-                        width: 2
+                        color: _hasPlaneFocus ? AppColors.appleYellow : Colors.white, 
+                        width: 2.5
                       ),
                     ),
                     child: Center(
-                      child: Icon(
-                        Icons.add, 
-                        color: _hasPlaneFocus ? AppColors.neonBlue : Colors.white54, 
-                        size: 24
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _hasPlaneFocus ? AppColors.appleYellow : Colors.white,
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
                   ).animate(
                     target: _hasPlaneFocus ? 1 : 0,
                     onPlay: (controller) => controller.repeat(reverse: true)
-                  ).scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 800.ms),
+                  ).scale(begin: const Offset(1, 1), end: const Offset(1.15, 1.15), duration: 1000.ms),
                   
                   // Contextual Prompt
                   if (!_hasPlaneFocus)
                     Padding(
-                      padding: const EdgeInsets.only(top: 15),
-                      child: GlassContainer(
-                        borderRadius: 20,
+                      padding: const EdgeInsets.only(top: 20),
+                      child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                         child: const Text(
-                          'Move phone to find a surface...',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                          'Find a surface',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ).animate().fadeIn().slideY(begin: 0.2),
                     )
                   else
                     Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: GlassContainer(
-                        borderRadius: 20,
+                      padding: const EdgeInsets.only(top: 15),
+                      child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.rotate_right, color: Colors.white70, size: 14),
-                            const SizedBox(width: 5),
-                            Text(
-                              '${(_imageRotationZ * 57.3).toStringAsFixed(0)}°',
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
-                          ],
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Text(
+                          '${(_imageRotationZ * 57.3).toStringAsFixed(0)}°',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ).animate().fadeIn(),
                     ),
@@ -416,9 +418,13 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   Widget _buildSideButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: GlassContainer(
-        padding: const EdgeInsets.all(10),
-        borderRadius: 50,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black38,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24, width: 1.5),
+        ),
         child: Icon(icon, color: Colors.white, size: 24),
       ),
     );
@@ -435,13 +441,13 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black26,
+          color: Colors.black38,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white30, width: 1.5),
+          border: Border.all(color: Colors.white24, width: 1.5),
         ),
         child: Icon(
           icon,
-          color: isActive ? (activeColor ?? AppColors.neonBlue) : Colors.white,
+          color: isActive ? (activeColor ?? AppColors.appleYellow) : Colors.white,
           size: 26,
         ),
       ),
@@ -452,32 +458,24 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     return GestureDetector(
       onTap: _isFloating ? _handleTap : _pickImage,
       child: Container(
-        width: 85,
-        height: 85,
-        padding: const EdgeInsets.all(4),
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 5),
+          border: Border.all(color: Colors.white, width: 4),
         ),
         child: Container(
+          margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: _isFloating 
-                ? (_hasPlaneFocus ? AppColors.neonBlue : Colors.grey[800]) 
-                : Colors.white24,
-            boxShadow: [
-              if (_isFloating && _hasPlaneFocus)
-                BoxShadow(
-                  color: AppColors.neonBlue.withValues(alpha: 0.5),
-                  blurRadius: 15,
-                  spreadRadius: 2,
-                ),
-            ],
+                ? (_hasPlaneFocus ? AppColors.appleYellow : Colors.grey[900]) 
+                : Colors.white,
           ),
           child: Icon(
             _isFloating ? Icons.check : Icons.photo_library,
-            color: _isFloating ? Colors.black : Colors.white,
-            size: 38,
+            color: Colors.black87,
+            size: 32,
           ),
         ),
       ).animate(target: _isFloating ? 1 : 0)
@@ -502,7 +500,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.neonBlue,
+                    color: AppColors.appleYellow,
                   ),
                 ),
                 const SizedBox(height: 25),
@@ -517,10 +515,13 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                      color: AppColors.appleYellow,
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    child: const Text('Start Creating', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Start Creating', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                    ),
                   ),
                 ),
               ],
@@ -548,7 +549,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                 trackHeight: 4,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                activeTrackColor: AppColors.neonBlue,
+                activeTrackColor: AppColors.appleYellow,
                 inactiveTrackColor: Colors.white24,
                 thumbColor: Colors.white,
               ),
@@ -570,10 +571,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.neonBlue.withValues(alpha: 0.1),
+            color: AppColors.appleYellow.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppColors.neonBlue, size: 24),
+          child: Icon(icon, color: AppColors.appleYellow, size: 24),
         ),
         const SizedBox(width: 20),
         Expanded(

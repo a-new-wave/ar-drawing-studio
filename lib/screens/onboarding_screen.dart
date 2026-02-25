@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../components/glass_container.dart';
-import '../theme/app_colors.dart';
 import 'workspace_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -39,18 +37,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
+          // Background Gradient (Dark iOS style)
           Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.5, -0.2),
-                radius: 1.5,
-                colors: [
-                  Color(0xFF1A1A2E),
-                  AppColors.darkBackground,
-                ],
-              ),
-            ),
+            color: AppColors.darkBackground,
           ),
           
           PageView.builder(
@@ -67,7 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Icon(
                       page.icon,
                       size: 100,
-                      color: AppColors.neonBlue,
+                      color: AppColors.appleYellow,
                     ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.8, 0.8)),
                     const SizedBox(height: 40),
                     Text(
@@ -105,8 +94,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       height: 8,
                       decoration: BoxDecoration(
                         color: _currentPage == index 
-                            ? AppColors.neonBlue 
-                            : AppColors.glassBorder,
+                            ? AppColors.appleYellow 
+                            : AppColors.appleGray.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -125,14 +114,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       _completeOnboarding(context);
                     }
                   },
-                  child: GlassContainer(
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    borderRadius: 30,
+                    decoration: BoxDecoration(
+                      color: AppColors.appleYellow,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                     child: Text(
-                      _currentPage == _pages.length - 1 ? 'Start' : 'Next',
+                      _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.neonBlue,
+                        color: Colors.black,
                       ),
                     ),
                   ),
