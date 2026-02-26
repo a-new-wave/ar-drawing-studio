@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -210,7 +211,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     if (!_isFloating || _arController == null) return;
 
     if (_arController is ARKitController) {
-      _arController.performHitTest(x: 0.5, y: 0.5).then((results) {
+      _arController.performHitTest(x: 0.5, y: 0.5).then((results) async {
         // Filter strictly for plane intersections, ignore feature points
         final planeResults = results.where((r) => 
           r.type == ARKitHitTestResultType.existingPlaneUsingExtent || 
@@ -223,8 +224,22 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
 
           // ARPlaneDetection.horizontal already ensures only floor/table planes are detected.
           // No ceiling or wall filtering needed at this level.
+          // Calculate heading to face the user
+          final cameraPos = await (_arController as ARKitController).cameraPosition();
           final targetTransform = vector.Matrix4.identity();
-          targetTransform.setRotation(vector.Matrix3.rotationX(-1.5708));
+          
+          if (cameraPos != null) {
+            final dx = cameraPos.x - hitPosition.x;
+            final dz = cameraPos.z - hitPosition.z;
+            final heading = math.atan2(dx, dz);
+            
+            final rotationMatrix = vector.Matrix3.rotationY(heading)
+              ..multiply(vector.Matrix3.rotationX(-1.5708));
+            targetTransform.setRotation(rotationMatrix);
+          } else {
+            targetTransform.setRotation(vector.Matrix3.rotationX(-1.5708));
+          }
+
           // ARKit hit-test Y sits slightly above the physical surface (anchor centroid offset).
           // Subtract 3mm to push the image flush against the actual table, eliminating the floating gap.
           targetTransform.setTranslation(vector.Vector3(
