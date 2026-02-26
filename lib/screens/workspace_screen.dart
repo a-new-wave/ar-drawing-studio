@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:arkit_plugin/arkit_plugin.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import '../components/ar_view_wrapper.dart';
@@ -27,6 +28,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   dynamic _arController;
   File? _imageFile;
   String? _libraryAssetPath;
+  String _selectedLibraryCategory = 'All';
   final ImagePicker _picker = ImagePicker();
   
   // Track the current node to update its properties
@@ -591,102 +593,136 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   }
 
   Widget _buildLibraryMenu() {
-    final categories = [
-      {'name': 'Anime', 'icon': Icons.brush, 'color': Colors.blue, 'asset': 'assets/library/anime.png'},
-      {'name': 'Architecture', 'icon': Icons.architecture, 'color': Colors.orange, 'asset': 'assets/library/architecture.png'},
-      {'name': 'Nature', 'icon': Icons.eco, 'color': Colors.green, 'asset': 'assets/library/nature.png'},
-      {'name': 'Portraits', 'icon': Icons.person, 'color': Colors.purple, 'asset': 'assets/library/portrait.png'},
+    final categories = ['All', 'Anime', 'Architecture', 'Nature', 'Portraits'];
+    
+    final libraryItems = [
+      {'name': 'Anime', 'category': 'Anime', 'asset': 'assets/library/anime.png'},
+      {'name': 'Architecture', 'category': 'Architecture', 'asset': 'assets/library/architecture.png'},
+      {'name': 'Nature', 'category': 'Nature', 'asset': 'assets/library/nature.png'},
+      {'name': 'Portraits', 'category': 'Portraits', 'asset': 'assets/library/portrait.png'},
+      // Repeated for better grid visualization
+      {'name': 'Anime Var', 'category': 'Anime', 'asset': 'assets/library/anime.png'},
+      {'name': 'Nature Var', 'category': 'Nature', 'asset': 'assets/library/nature.png'},
     ];
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 25),
-          const Text(
-            'Inspiration Library',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Select a curated sketch to start tracing',
-            style: TextStyle(color: Colors.white54, fontSize: 14),
-          ),
-          const SizedBox(height: 30),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              return _buildCategoryCard(
-                name: cat['name'] as String,
-                icon: cat['icon'] as IconData,
-                color: cat['color'] as Color,
-                asset: cat['asset'] as String,
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        final filteredItems = _selectedLibraryCategory == 'All' 
+            ? libraryItems 
+            : libraryItems.where((item) => item['category'] == _selectedLibraryCategory).toList();
 
-  Widget _buildCategoryCard({required String name, required IconData icon, required Color color, required String asset}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            setState(() {
-              _libraryAssetPath = asset;
-              _imageFile = null;
-              _isFloating = true;
-            });
-            _startPreviewTracking();
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Selected $name sketch'), backgroundColor: AppColors.appleYellow),
-            );
-          },
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.7,
+          decoration: const BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 30),
-              const SizedBox(height: 10),
-              Text(
-                name,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Inspiration Library',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(height: 20),
+              
+              // Category Pills
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: categories.map((cat) {
+                    final isSelected = _selectedLibraryCategory == cat;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          setModalState(() {
+                            _selectedLibraryCategory = cat;
+                          });
+                          HapticFeedback.selectionClick();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.appleYellow : Colors.white10,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected ? AppColors.appleYellow : Colors.white24,
+                            ),
+                          ),
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              color: isSelected ? Colors.black : Colors.white70,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Masonry Grid
+              Expanded(
+                child: MasonryGridView.count(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _libraryAssetPath = item['asset'];
+                          _imageFile = null;
+                          _isFloating = true;
+                          _isLocked = false;
+                        });
+                        HapticFeedback.lightImpact();
+                        _startPreviewTracking();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Selected ${item['name']}'),
+                            backgroundColor: AppColors.appleYellow,
+                          ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          child: Image.asset(
+                            item['asset']!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
