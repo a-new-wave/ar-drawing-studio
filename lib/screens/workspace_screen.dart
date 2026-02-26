@@ -196,7 +196,22 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         _imageScale = (_baseScale * details.scale).clamp(0.05, 1.5);
         _imageRotationZ = _baseRotation - details.rotation;
       });
-      _addARImageNode();
+      
+      if (_imageNode != null && _imageTransform != null && _arController is ARKitController) {
+        final transform = _imageTransform!.clone();
+        transform.multiply(vector.Matrix4.rotationZ(_imageRotationZ));
+        
+        final arKitNode = _imageNode as ARKitNode;
+        arKitNode.transformNotifier.value = transform; // Explicitly set notifier to trigger native update
+        
+        final geometry = arKitNode.geometry;
+        if (geometry is ARKitPlane) {
+          geometry.width.value = _imageScale * _imageAspectRatio;
+          geometry.height.value = _imageScale;
+        }
+      } else {
+        _addARImageNode();
+      }
     }
   }
 
@@ -256,7 +271,14 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           if (_imageTransform == null || 
               (targetTransform.getTranslation() - _imageTransform!.getTranslation()).length > 0.005) {
             setState(() { _imageTransform = targetTransform; });
-            _addARImageNode();
+            
+            if (_imageNode != null && _arController is ARKitController) {
+               final transform = _imageTransform!.clone();
+               transform.multiply(vector.Matrix4.rotationZ(_imageRotationZ));
+               (_imageNode as ARKitNode).transformNotifier.value = transform;
+            } else {
+               _addARImageNode();
+            }
           }
         } else {
           // No plane detected. Hide the image entirely.
@@ -301,10 +323,23 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
     setState(() => _opacity = value);
     
-    // Update live node transparency
+    // Update live node transparency efficiently
     if (_imageNode != null && _arController is ARKitController) {
-      // Re-add or update logic depending on plugin version
-      // For simplicity in this plugin, we re-apply the node with new settings
+      final imageProperty = _libraryAssetPath != null 
+          ? ARKitMaterialProperty.image(_libraryAssetPath!) 
+          : ARKitMaterialProperty.image(_imageFile!.path);
+      
+      final geometry = (_imageNode as ARKitNode).geometry;
+      if (geometry != null) {
+        geometry.materials.value = [
+          ARKitMaterial(
+            diffuse: imageProperty,
+            doubleSided: true,
+            transparency: _opacity,
+          ),
+        ];
+      }
+    } else if (_imageNode != null) {
       _addARImageNode();
     }
   }
