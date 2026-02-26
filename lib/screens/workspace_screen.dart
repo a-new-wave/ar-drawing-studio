@@ -145,7 +145,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _previewTimer?.cancel();
       setState(() {
         _isFloating = false;
-        _isLocked = true;
+        _isLocked = false; // Manual lock only now
         _hasPlaneFocus = true; // Lock hides prompt
       });
 
@@ -155,7 +155,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       HapticFeedback.vibrate();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Position Fixed! View Locked.'),
+          content: Text('Image Placed! Adjust or Lock below.'),
           backgroundColor: AppColors.appleYellow,
         ),
       );
@@ -379,9 +379,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                     onTap: _resetWorkspace,
                   ),
                 ],
-                if (_showOpacitySlider && (_imageFile != null || _libraryAssetPath != null))
-                  _buildVerticalOpacitySlider()
-                else ...[
+                ...[
                   _buildSideButton(
                     icon: Icons.history,
                     onTap: () {}, // Future: History
@@ -436,13 +434,25 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        _buildSnapIcon(
-                          icon: Icons.opacity,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => _showOpacitySlider = !_showOpacitySlider);
-                          },
-                          isActive: _showOpacitySlider,
+                        // Transparency Button + Vertical Slider Stack
+                        Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            if (_showOpacitySlider)
+                              Positioned(
+                                bottom: 80,
+                                child: _buildVerticalOpacitySlider(),
+                              ),
+                            _buildSnapIcon(
+                              icon: Icons.opacity,
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                setState(() => _showOpacitySlider = !_showOpacitySlider);
+                              },
+                              isActive: _showOpacitySlider,
+                            ),
+                          ],
                         ),
                         
                         // Main Super Button (Now only for Placement)
