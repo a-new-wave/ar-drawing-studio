@@ -74,7 +74,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   }
 
   void _addARImageNode() {
-    if (_arController == null || _imageFile == null) return;
+    if (_arController == null || (_imageFile == null && _libraryAssetPath == null)) return;
 
     // Remove existing node
     if (_imageNode != null) {
