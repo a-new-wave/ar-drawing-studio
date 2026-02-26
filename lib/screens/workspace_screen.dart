@@ -9,6 +9,7 @@ import 'package:arkit_plugin/arkit_plugin.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
+import 'package:torch_light/torch_light.dart';
 import '../components/ar_view_wrapper.dart';
 import '../components/glass_container.dart';
 import '../theme/app_colors.dart';
@@ -36,6 +37,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   dynamic _imageNode;
   bool _isFloating = false;
   bool _hasPlaneFocus = false;
+  bool _isTorchOn = false;
   vector.Matrix4? _imageTransform;
   Timer? _previewTimer;
   double _imageScale = 0.3;
@@ -272,7 +274,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
   }
 
-  void _resetWorkspace() {
+  void _cancelSelection() {
     _previewTimer?.cancel();
     if (_arController != null && _imageNode != null) {
       if (_arController is ARKitController) {
@@ -293,6 +295,25 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _showOpacitySlider = true;
     });
     HapticFeedback.heavyImpact();
+  }
+
+  Future<void> _toggleTorch() async {
+    try {
+      final isTorchAvailable = await TorchLight.isTorchAvailable();
+      if (isTorchAvailable) {
+        if (_isTorchOn) {
+          await TorchLight.disableTorch();
+        } else {
+          await TorchLight.enableTorch();
+        }
+        setState(() {
+          _isTorchOn = !_isTorchOn;
+        });
+        HapticFeedback.selectionClick();
+      }
+    } catch (e) {
+      debugPrint("Error toggling torch: $e");
+    }
   }
 
   void _updateOpacity(double value) {
@@ -406,13 +427,14 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                     onTap: _cancelSelection,
                     backgroundColor: Colors.redAccent.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: 20),
-                  _buildSideButton(
-                    icon: Icons.refresh,
-                    onTap: _resetWorkspace,
-                  ),
                 ],
                 ...[
+                  const SizedBox(height: 20),
+                  _buildSideButton(
+                    icon: _isTorchOn ? Icons.flashlight_on : Icons.flashlight_off_outlined,
+                    onTap: _toggleTorch,
+                    backgroundColor: _isTorchOn ? AppColors.appleYellow : Colors.white12,
+                  ),
                   _buildSideButton(
                     icon: Icons.history,
                     onTap: () {}, // Future: History
@@ -854,18 +876,5 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
         ),
       ],
     );
-  }
-
-  void _cancelSelection() {
-    _previewTimer?.cancel();
-    _removeARImageNode();
-    setState(() {
-      _imageFile = null;
-      _libraryAssetPath = null;
-      _isFloating = false;
-      _hasPlaneFocus = false;
-      _imageTransform = null;
-    });
-    HapticFeedback.mediumImpact();
   }
 }
