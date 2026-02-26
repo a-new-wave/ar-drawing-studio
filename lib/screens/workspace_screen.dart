@@ -586,6 +586,8 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       {'name': 'Nature 1', 'category': 'Nature', 'asset': 'assets/library/nature.png'},
       {'name': 'Nature 2', 'category': 'Nature', 'asset': 'assets/library/nature_2.png'},
       {'name': 'Nature 3', 'category': 'Nature', 'asset': 'assets/library/nature_3.png'},
+      {'name': 'Nature 4', 'category': 'Nature', 'asset': 'assets/library/nature_4.png'},
+      {'name': 'Nature 5', 'category': 'Nature', 'asset': 'assets/library/nature_5.png'},
       {'name': 'Portraits', 'category': 'Portraits', 'asset': 'assets/library/portrait.png'},
       // Repeated for better grid visualization
       {'name': 'Anime Var', 'category': 'Anime', 'asset': 'assets/library/anime.png'},
