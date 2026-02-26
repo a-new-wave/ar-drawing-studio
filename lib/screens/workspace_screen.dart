@@ -11,7 +11,6 @@ import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:torch_light/torch_light.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import '../components/ar_view_wrapper.dart';
 import '../components/glass_container.dart';
 import '../theme/app_colors.dart';
@@ -54,6 +53,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   Timer? _recordingTimer;
   int _recordingFrameCount = 0;
   String? _recordingDirPath;
+  static const _timelapseChannel = MethodChannel('ar_drawing_app/timelapse');
 
   @override
   void dispose() {
@@ -377,20 +377,14 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
 
     try {
-      // Save all captured frames to the Camera Roll as individual photos
-      int savedCount = 0;
-      for (int i = 0; i < _recordingFrameCount; i++) {
-        final framePath = '$_recordingDirPath/frame_${i.toString().padLeft(4, '0')}.jpg';
-        final frameFile = File(framePath);
-        if (await frameFile.exists()) {
-          final bytes = await frameFile.readAsBytes();
-          final result = await ImageGallerySaver.saveImage(bytes, name: 'ar_timelapse_frame_$i');
-          if (result['isSuccess'] == true) savedCount++;
-        }
-      }
-      debugPrint("Saved $savedCount timelapse frames to gallery.");
-    } catch (e) {
-      debugPrint("Error saving timelapse frames: $e");
+      // Call native iOS AVAssetWriter to stitch frames into MP4 and save to Camera Roll
+      await _timelapseChannel.invokeMethod('encodeTimelapse', {
+        'framesDir': _recordingDirPath,
+        'frameCount': _recordingFrameCount,
+      });
+      debugPrint("Timelapse saved to Camera Roll!");
+    } on PlatformException catch (e) {
+      debugPrint("Timelapse encoding failed: ${e.message}");
     } finally {
       setState(() => _isProcessingVideo = false);
     }
