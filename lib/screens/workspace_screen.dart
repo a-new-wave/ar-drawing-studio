@@ -61,6 +61,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           _libraryAssetPath = null;
           _isFloating = true;
           _isLocked = false;
+          _opacity = 0.5; // Reset to 50% on selection
           _showOpacitySlider = true;
         });
         HapticFeedback.lightImpact();
@@ -682,9 +683,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                           _imageFile = null;
                           _isFloating = true;
                           _isLocked = false;
+                          _opacity = 0.5; // Reset to 50% on selection
                         });
                         HapticFeedback.lightImpact();
                         _startPreviewTracking();
+                        _addARImageNode(); // Fix: Show preview immediately
                         Navigator.pop(context);
                       },
                       child: ClipRRect(
