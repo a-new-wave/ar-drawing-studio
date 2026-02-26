@@ -132,7 +132,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
             ARKitMaterial(
               diffuse: imageProperty,
               doubleSided: true,
-              transparency: _opacity, // Respect slider/default even during preview
+              transparency: _opacity, // Fix: Always respect the slider state, even during preview
             ),
           ],
         ),
@@ -226,10 +226,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           final targetTransform = vector.Matrix4.identity();
           targetTransform.setRotation(vector.Matrix3.rotationX(-1.5708));
           // ARKit hit-test Y sits slightly above the physical surface (anchor centroid offset).
-          // Subtract 2mm to push the image flush against the actual table.
+          // Subtract 3mm to push the image flush against the actual table, eliminating the floating gap.
           targetTransform.setTranslation(vector.Vector3(
             hitPosition.x,
-            hitPosition.y - 0.002,
+            hitPosition.y - 0.003,
             hitPosition.z,
           ));
 
@@ -450,16 +450,15 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // Transparency Button + Vertical Slider Stack
-                        Stack(
-                          clipBehavior: Clip.none,
-                          alignment: Alignment.bottomCenter,
+                        // Transparency Button + Vertical Slider Column
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             if (_showOpacitySlider)
-                              Positioned(
-                                bottom: 80,
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: _buildVerticalOpacitySlider(),
                               ),
                             _buildSnapIcon(
@@ -794,36 +793,30 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   }
 
   Widget _buildVerticalOpacitySlider() {
-    return Column(
-      children: [
-        const Icon(Icons.opacity, color: Colors.white, size: 20),
-        const SizedBox(height: 10),
-        SizedBox(
-          width: 44,
-          height: 150,
-          child: GlassContainer(
-            borderRadius: 30,
-            child: RotatedBox(
-            quarterTurns: 3,
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 4,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                activeTrackColor: AppColors.appleYellow,
-                inactiveTrackColor: Colors.white24,
-                thumbColor: Colors.white,
-              ),
-              child: Slider(
-                value: _opacity,
-                onChanged: _updateOpacity,
-              ),
+    return SizedBox(
+      width: 44,
+      height: 150,
+      child: GlassContainer(
+        borderRadius: 30,
+        child: RotatedBox(
+          quarterTurns: 3,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+              activeTrackColor: AppColors.appleYellow,
+              inactiveTrackColor: Colors.white24,
+              thumbColor: Colors.white,
+            ),
+            child: Slider(
+              value: _opacity,
+              onChanged: _updateOpacity,
             ),
           ),
         ),
       ),
-      ],
-    ).animate().fadeIn().slideX(begin: 0.2);
+    ).animate().fadeIn().slideY(begin: 0.2);
   }
 
   Widget _buildTutorialStep(IconData icon, String text) {
