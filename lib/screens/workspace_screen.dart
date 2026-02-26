@@ -21,9 +21,9 @@ class WorkspaceScreen extends StatefulWidget {
 }
 
 class _WorkspaceScreenState extends State<WorkspaceScreen> {
-  late double _opacity = 0.5;
+  late double _opacity = 0.7; // 70% visible by default
   late bool _isLocked = false;
-  late bool _showOpacitySlider = true;
+  late bool _showOpacitySlider = false; // Hide by default
   late bool _showTutorial = widget.isFirstTimeInWorkspace;
   dynamic _arController;
   File? _imageFile;
@@ -38,6 +38,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   vector.Matrix4? _imageTransform;
   Timer? _previewTimer;
   double _imageScale = 0.3;
+  double _imageAspectRatio = 1.0; // Default to square
   double _imageRotationZ = 0.0;
   double _baseScale = 0.3;
   double _baseRotation = 0.0;
@@ -56,13 +57,15 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
+        final file = File(image.path);
+        await _updateImageAspectRatio(file, null);
         setState(() {
-          _imageFile = File(image.path);
+          _imageFile = file;
           _libraryAssetPath = null;
           _isFloating = true;
           _isLocked = false;
-          _opacity = 0.5; // Reset to 50% on selection
-          _showOpacitySlider = true;
+          _opacity = 0.7; // 70% visible
+          _showOpacitySlider = false; // Stay hidden as requested
         });
         HapticFeedback.lightImpact();
         _startPreviewTracking();
@@ -71,6 +74,31 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     } catch (e) {
       debugPrint('Error picking image: $e');
     }
+  }
+
+  Future<void> _updateImageAspectRatio(File? file, String? asset) async {
+    final Completer<double> completer = Completer();
+    ImageStream stream;
+    if (file != null) {
+      stream = FileImage(file).resolve(ImageConfiguration.empty);
+    } else if (asset != null) {
+      stream = AssetImage(asset).resolve(ImageConfiguration.empty);
+    } else {
+      return;
+    }
+    
+    final ImageStreamListener listener = ImageStreamListener((ImageInfo info, bool _) {
+      final ratio = info.image.width / info.image.height;
+      if (!completer.isCompleted) completer.complete(ratio);
+    });
+
+    stream.addListener(listener);
+    final ratio = await completer.future.timeout(const Duration(seconds: 2), onTimeout: () => 1.0);
+    stream.removeListener(listener);
+
+    setState(() {
+      _imageAspectRatio = ratio;
+    });
   }
 
   void _addARImageNode() {
@@ -98,13 +126,13 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _imageNode = ARKitNode(
         name: 'drawing_node',
         geometry: ARKitPlane(
-          width: _imageScale,
+          width: _imageScale * _imageAspectRatio,
           height: _imageScale,
           materials: [
             ARKitMaterial(
               diffuse: imageProperty,
               doubleSided: true,
-              transparency: _isFloating ? 0.3 : _opacity,
+              transparency: _opacity, // Respect slider/default even during preview
             ),
           ],
         ),
@@ -114,8 +142,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     } else if (_arController is ArCoreController) {
       _imageNode = ArCoreNode(
         image: ArCoreImage(
-          bytes: _imageFile!.readAsBytesSync(),
-          width: 400,
+          bytes: _libraryAssetPath != null 
+              ? File(_libraryAssetPath!).readAsBytesSync() // Simplified, assets in ArCore plugin are complex
+              : _imageFile!.readAsBytesSync(),
+          width: (400 * _imageAspectRatio).toInt(),
           height: 400,
         ),
         position: _imageTransform?.getTranslation() ?? vector.Vector3(0, -0.1, -0.4),
@@ -677,18 +707,21 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                   itemBuilder: (context, index) {
                     final item = filteredItems[index];
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
+                        final assetPath = item['asset']!;
+                        await _updateImageAspectRatio(null, assetPath);
                         setState(() {
-                          _libraryAssetPath = item['asset'];
+                          _libraryAssetPath = assetPath;
                           _imageFile = null;
                           _isFloating = true;
                           _isLocked = false;
-                          _opacity = 0.5; // Reset to 50% on selection
+                          _opacity = 0.7; // 70% visible
+                          _showOpacitySlider = false; // Stay hidden
                         });
                         HapticFeedback.lightImpact();
                         _startPreviewTracking();
                         _addARImageNode(); // Fix: Show preview immediately
-                        Navigator.pop(context);
+                        if (context.mounted) Navigator.pop(context);
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
