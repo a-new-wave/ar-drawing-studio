@@ -10,6 +10,10 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:torch_light/torch_light.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:ffmpeg_kit_flutter_min/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_min/return_code.dart';
+import 'package:share_plus/share_plus.dart';
 import '../components/ar_view_wrapper.dart';
 import '../components/glass_container.dart';
 import '../theme/app_colors.dart';
@@ -46,9 +50,17 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   double _baseScale = 0.3;
   double _baseRotation = 0.0;
 
+  // Recording State
+  bool _isRecording = false;
+  bool _isProcessingVideo = false;
+  Timer? _recordingTimer;
+  int _recordingFrameCount = 0;
+  String? _recordingDirPath;
+
   @override
   void dispose() {
     _previewTimer?.cancel();
+    _recordingTimer?.cancel();
     super.dispose();
   }
 
@@ -316,6 +328,78 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
   }
 
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _stopRecording();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    final dir = await getTemporaryDirectory();
+    _recordingDirPath = '${dir.path}/ar_timelapse_${DateTime.now().millisecondsSinceEpoch}';
+    await Directory(_recordingDirPath!).create(recursive: true);
+    
+    setState(() {
+      _isRecording = true;
+      _recordingFrameCount = 0;
+    });
+    HapticFeedback.mediumImpact();
+
+    // Capture 1 frame every second
+    _recordingTimer = Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
+      if (_arController is ARKitController) {
+        try {
+          final imageProvider = await (_arController as ARKitController).getCapturedImage();
+          if (imageProvider is MemoryImage) {
+            final bytes = imageProvider.bytes;
+            final file = File('$_recordingDirPath/frame_${_recordingFrameCount.toString().padLeft(4, '0')}.jpg');
+            await file.writeAsBytes(bytes);
+            _recordingFrameCount++;
+          }
+        } catch (e) {
+          debugPrint("Error capturing frame: $e");
+        }
+      }
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    _recordingTimer?.cancel();
+    setState(() {
+      _isRecording = false;
+      _isProcessingVideo = true;
+    });
+    HapticFeedback.heavyImpact();
+
+    if (_recordingFrameCount == 0 || _recordingDirPath == null) {
+      setState(() => _isProcessingVideo = false);
+      return;
+    }
+
+    try {
+      final outputPath = '$_recordingDirPath/timelapse.mp4';
+      // Generate a 4fps MP4 from the 1fps JPEGs (4x speed timelapse)
+      final command = "-y -framerate 4 -i '$_recordingDirPath/frame_%04d.jpg' -c:v mpeg4 -q:v 5 '$outputPath'";
+      
+      final session = await FFmpegKit.execute(command);
+      final returnCode = await session.getReturnCode();
+
+      if (ReturnCode.isSuccess(returnCode)) {
+        await SharePlus.instance.share(
+          ShareParams(files: [XFile(outputPath)], text: 'My AR Drawing Timelapse!'),
+        );
+      } else {
+        debugPrint("FFmpeg processing failed.");
+      }
+    } catch (e) {
+      debugPrint("Error processing video: $e");
+    } finally {
+      setState(() => _isProcessingVideo = false);
+    }
+  }
+
   void _updateOpacity(double value) {
     if ((_opacity - value).abs() > 0.05) {
       HapticFeedback.selectionClick();
@@ -579,6 +663,33 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   }
 
   Widget _buildSuperButton() {
+    if (!_isFloating) {
+      return GestureDetector(
+        onTap: _isProcessingVideo ? null : _toggleRecording,
+        child: Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white30, width: 4),
+            color: _isRecording ? Colors.red : Colors.white12,
+          ),
+          child: _isProcessingVideo
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : Center(
+                  child: Container(
+                    width: _isRecording ? 28 : 64,
+                    height: _isRecording ? 28 : 64,
+                    decoration: BoxDecoration(
+                      color: _isRecording ? Colors.red : Colors.white,
+                      borderRadius: BorderRadius.circular(_isRecording ? 4 : 32),
+                    ),
+                  ),
+                ),
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: _handleTap,
       child: Container(
