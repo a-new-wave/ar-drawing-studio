@@ -583,11 +583,12 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     final libraryItems = [
       {'name': 'Anime', 'category': 'Anime', 'asset': 'assets/library/anime.png'},
       {'name': 'Architecture', 'category': 'Architecture', 'asset': 'assets/library/architecture.png'},
-      {'name': 'Nature', 'category': 'Nature', 'asset': 'assets/library/nature.png'},
+      {'name': 'Nature 1', 'category': 'Nature', 'asset': 'assets/library/nature.png'},
+      {'name': 'Nature 2', 'category': 'Nature', 'asset': 'assets/library/nature_2.png'},
+      {'name': 'Nature 3', 'category': 'Nature', 'asset': 'assets/library/nature_3.png'},
       {'name': 'Portraits', 'category': 'Portraits', 'asset': 'assets/library/portrait.png'},
       // Repeated for better grid visualization
       {'name': 'Anime Var', 'category': 'Anime', 'asset': 'assets/library/anime.png'},
-      {'name': 'Nature Var', 'category': 'Nature', 'asset': 'assets/library/nature.png'},
     ];
 
     return StatefulBuilder(
