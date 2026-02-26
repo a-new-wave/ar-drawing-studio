@@ -135,12 +135,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   void _handleTap() {
     if (_isFloating) {
       if (!_hasPlaneFocus) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please aim at a detected surface first.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
         return;
       }
 
@@ -155,12 +149,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _addARImageNode();
 
       HapticFeedback.vibrate();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image Placed! Adjust or Lock below.'),
-          backgroundColor: AppColors.appleYellow,
-        ),
-      );
     }
   }
 
@@ -259,9 +247,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _showOpacitySlider = true;
     });
     HapticFeedback.heavyImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workspace Reset')),
-    );
   }
 
   void _updateOpacity(double value) {
@@ -698,12 +683,6 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                         HapticFeedback.lightImpact();
                         _startPreviewTracking();
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Selected ${item['name']}'),
-                            backgroundColor: AppColors.appleYellow,
-                          ),
-                        );
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
@@ -841,8 +820,5 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _imageTransform = null;
     });
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Selection Cancelled'), duration: Duration(seconds: 1)),
-    );
   }
 }
