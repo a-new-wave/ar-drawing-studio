@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:arkit_plugin/arkit_plugin.dart';
@@ -21,6 +22,7 @@ class WorkspaceScreen extends StatefulWidget {
 class _WorkspaceScreenState extends State<WorkspaceScreen> {
   late double _opacity = 0.5;
   late bool _isLocked = false;
+  late bool _showOpacitySlider = true;
   late bool _showTutorial = widget.isFirstTimeInWorkspace;
   dynamic _arController;
   File? _imageFile;
@@ -57,7 +59,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           _libraryAssetPath = null;
           _isFloating = true;
           _isLocked = false;
+          _showOpacitySlider = true;
         });
+        HapticFeedback.lightImpact();
         _startPreviewTracking();
         _addARImageNode();
       }
@@ -148,10 +152,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       // Finalize image node (update transparency and ensure final position)
       _addARImageNode();
 
+      HapticFeedback.vibrate();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Position Fixed! View Locked.'),
-          backgroundColor: AppColors.neonBlue,
+          backgroundColor: AppColors.appleYellow,
         ),
       );
     }
@@ -207,7 +212,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
             hitPosition.z,
           ));
 
-          if (!_hasPlaneFocus) setState(() => _hasPlaneFocus = true);
+          if (!_hasPlaneFocus) {
+            setState(() => _hasPlaneFocus = true);
+            HapticFeedback.mediumImpact();
+          }
 
           if (_imageTransform == null || 
               (targetTransform.getTranslation() - _imageTransform!.getTranslation()).length > 0.005) {
@@ -231,7 +239,9 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   void _resetWorkspace() {
     _previewTimer?.cancel();
     if (_arController != null && _imageNode != null) {
-      _arController.remove('drawing_node');
+      if (_arController is ARKitController) {
+        _arController.remove('drawing_node');
+      }
     }
     setState(() {
       _imageFile = null;
@@ -244,13 +254,18 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       _opacity = 0.5;
       _imageScale = 0.3;
       _imageRotationZ = 0.0;
+      _showOpacitySlider = true;
     });
+    HapticFeedback.heavyImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Workspace Reset')),
     );
   }
 
   void _updateOpacity(double value) {
+    if ((_opacity - value).abs() > 0.05) {
+      HapticFeedback.selectionClick();
+    }
     setState(() => _opacity = value);
     
     // Update live node transparency
@@ -354,11 +369,17 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                 if (_imageFile != null || _libraryAssetPath != null) ...[
                   const SizedBox(height: 20),
                   _buildSideButton(
+                    icon: Icons.close,
+                    onTap: _cancelSelection,
+                    backgroundColor: Colors.redAccent.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSideButton(
                     icon: Icons.refresh,
                     onTap: _resetWorkspace,
                   ),
                 ],
-                if (!_isLocked && (_imageFile != null || _libraryAssetPath != null))
+                if (_showOpacitySlider && (_imageFile != null || _libraryAssetPath != null))
                   _buildVerticalOpacitySlider()
                 else ...[
                   _buildSideButton(
@@ -417,8 +438,11 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                       children: [
                         _buildSnapIcon(
                           icon: Icons.opacity,
-                          onTap: () {}, // Handled by slider visibility
-                          isActive: true,
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _showOpacitySlider = !_showOpacitySlider);
+                          },
+                          isActive: _showOpacitySlider,
                         ),
                         
                         // Main Super Button (Now only for Placement)
@@ -426,7 +450,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                         
                         _buildSnapIcon(
                           icon: _isLocked ? Icons.lock : Icons.lock_open,
-                          onTap: () => setState(() => _isLocked = !_isLocked),
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            setState(() => _isLocked = !_isLocked);
+                          },
                           isActive: _isLocked,
                           activeColor: AppColors.neonPink,
                         ),
@@ -444,13 +471,17 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     );
   }
 
-  Widget _buildSideButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildSideButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color backgroundColor = Colors.black38,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black38,
+          color: backgroundColor,
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white24, width: 1.5),
         ),
@@ -750,6 +781,22 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _cancelSelection() {
+    _previewTimer?.cancel();
+    _removeARImageNode();
+    setState(() {
+      _imageFile = null;
+      _libraryAssetPath = null;
+      _isFloating = false;
+      _hasPlaneFocus = false;
+      _imageTransform = null;
+    });
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Selection Cancelled'), duration: Duration(seconds: 1)),
     );
   }
 }
