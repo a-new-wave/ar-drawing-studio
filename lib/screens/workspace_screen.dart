@@ -24,6 +24,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
   late bool _showTutorial = widget.isFirstTimeInWorkspace;
   dynamic _arController;
   File? _imageFile;
+  String? _libraryAssetPath;
   final ImagePicker _picker = ImagePicker();
   
   // Track the current node to update its properties
@@ -53,6 +54,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       if (image != null) {
         setState(() {
           _imageFile = File(image.path);
+          _libraryAssetPath = null;
           _isFloating = true;
           _isLocked = false;
         });
@@ -82,6 +84,10 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       // Rotate around the Z-axis of the placed plane (feels like rotating the image in-place)
       transform.multiply(vector.Matrix4.rotationZ(_imageRotationZ));
 
+      final imageProperty = _libraryAssetPath != null 
+          ? ARKitMaterialProperty.image(_libraryAssetPath!) 
+          : ARKitMaterialProperty.image(_imageFile!.path);
+
       _imageNode = ARKitNode(
         name: 'drawing_node',
         geometry: ARKitPlane(
@@ -89,7 +95,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           height: _imageScale,
           materials: [
             ARKitMaterial(
-              diffuse: ARKitMaterialProperty.image(_imageFile!.path),
+              diffuse: imageProperty,
               doubleSided: true,
               transparency: _isFloating ? 0.3 : _opacity,
             ),
@@ -229,6 +235,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
     }
     setState(() {
       _imageFile = null;
+      _libraryAssetPath = null;
       _imageNode = null;
       _imageTransform = null;
       _isFloating = false;
@@ -344,14 +351,14 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
                   icon: Icons.info_outline,
                   onTap: () => setState(() => _showTutorial = true),
                 ),
-                if (_imageFile != null) ...[
+                if (_imageFile != null || _libraryAssetPath != null) ...[
                   const SizedBox(height: 20),
                   _buildSideButton(
                     icon: Icons.refresh,
                     onTap: _resetWorkspace,
                   ),
                 ],
-                if (!_isLocked && _imageFile != null)
+                if (!_isLocked && (_imageFile != null || _libraryAssetPath != null))
                   _buildVerticalOpacitySlider()
                 else ...[
                   _buildSideButton(
@@ -378,32 +385,54 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
               children: [
                 // Removed horizontal slider from here
                 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (_imageFile != null)
+                if (_imageFile == null && _libraryAssetPath == null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionPill(
+                            label: 'Gallery',
+                            icon: Icons.photo_library_outlined,
+                            onTap: _pickImage,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildActionPill(
+                            label: 'Library',
+                            icon: Icons.auto_awesome_motion_outlined,
+                            onTap: _showLibraryBottomSheet,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
                         _buildSnapIcon(
                           icon: Icons.opacity,
                           onTap: () {}, // Handled by slider visibility
                           isActive: true,
                         ),
-                      
-                      // Main Super Button
-                      _buildSuperButton(),
-                      
-                      if (_imageFile != null)
+                        
+                        // Main Super Button (Now only for Placement)
+                        _buildSuperButton(),
+                        
                         _buildSnapIcon(
                           icon: _isLocked ? Icons.lock : Icons.lock_open,
                           onTap: () => setState(() => _isLocked = !_isLocked),
                           isActive: _isLocked,
                           activeColor: AppColors.neonPink,
                         ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
               ],
             ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.5),
           ),
@@ -456,7 +485,7 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
 
   Widget _buildSuperButton() {
     return GestureDetector(
-      onTap: _isFloating ? _handleTap : _pickImage,
+      onTap: _handleTap,
       child: Container(
         width: 80,
         height: 80,
@@ -468,18 +497,155 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _isFloating 
-                ? (_hasPlaneFocus ? AppColors.appleYellow : Colors.grey[900]) 
-                : Colors.white,
+            color: _hasPlaneFocus ? AppColors.appleYellow : Colors.grey[900],
           ),
-          child: Icon(
-            _isFloating ? Icons.check : Icons.photo_library,
+          child: const Icon(
+            Icons.check,
             color: Colors.black87,
             size: 32,
           ),
         ),
-      ).animate(target: _isFloating ? 1 : 0)
-       .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), curve: Curves.elasticOut),
+      ).animate().scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), curve: Curves.elasticOut),
+    );
+  }
+
+  Widget _buildActionPill({required String label, required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.black87, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLibraryBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _buildLibraryMenu(),
+    );
+  }
+
+  Widget _buildLibraryMenu() {
+    final categories = [
+      {'name': 'Anime', 'icon': Icons.brush, 'color': Colors.blue, 'asset': 'assets/library/anime.png'},
+      {'name': 'Architecture', 'icon': Icons.architecture, 'color': Colors.orange, 'asset': 'assets/library/architecture.png'},
+      {'name': 'Nature', 'icon': Icons.eco, 'color': Colors.green, 'asset': 'assets/library/nature.png'},
+      {'name': 'Portraits', 'icon': Icons.person, 'color': Colors.purple, 'asset': 'assets/library/portrait.png'},
+    ];
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 25),
+          const Text(
+            'Inspiration Library',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Select a curated sketch to start tracing',
+            style: TextStyle(color: Colors.white54, fontSize: 14),
+          ),
+          const SizedBox(height: 30),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.5,
+            ),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final cat = categories[index];
+              return _buildCategoryCard(
+                name: cat['name'] as String,
+                icon: cat['icon'] as IconData,
+                color: cat['color'] as Color,
+                asset: cat['asset'] as String,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard({required String name, required IconData icon, required Color color, required String asset}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            setState(() {
+              _libraryAssetPath = asset;
+              _imageFile = null;
+              _isFloating = true;
+            });
+            _startPreviewTracking();
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Selected $name sketch'), backgroundColor: AppColors.appleYellow),
+            );
+          },
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 30),
+              const SizedBox(height: 10),
+              Text(
+                name,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
