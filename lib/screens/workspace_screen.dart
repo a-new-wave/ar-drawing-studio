@@ -657,25 +657,36 @@ class _WorkspaceScreenState extends State<WorkspaceScreen> {
       return GestureDetector(
         onTap: _isProcessingVideo ? null : _toggleRecording,
         child: Container(
-          width: 80,
-          height: 80,
+          width: 84,
+          height: 84,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white30, width: 4),
-            color: _isRecording ? Colors.red : Colors.white12,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: _isRecording ? 1.0 : 0.4),
+              width: 4.5,
+            ),
           ),
-          child: _isProcessingVideo
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
-              : Center(
-                  child: Container(
-                    width: _isRecording ? 28 : 64,
-                    height: _isRecording ? 28 : 64,
+          child: Center(
+            child: _isProcessingVideo
+                ? const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(
+                      color: Colors.redAccent,
+                      strokeWidth: 3,
+                    ),
+                  )
+                : AnimatedContainer(
+                    duration: 300.ms,
+                    curve: Curves.easeInOutBack,
+                    width: _isRecording ? 32 : 68,
+                    height: _isRecording ? 32 : 68,
                     decoration: BoxDecoration(
-                      color: _isRecording ? Colors.red : Colors.white,
-                      borderRadius: BorderRadius.circular(_isRecording ? 4 : 32),
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(_isRecording ? 8 : 34),
                     ),
                   ),
-                ),
+          ),
         ),
       );
     }
