@@ -49,8 +49,8 @@ dependencies:
   screen_recorder: ^0.3.0
   camera: ^0.11.2+1
   path_provider: ^2.1.5
-  ffmpeg_kit_flutter_min: ^6.0.3
   share_plus: ^12.0.1
+  image_gallery_saver: ^2.0.3
 
 dev_dependencies:
   flutter_test:
