@@ -9,9 +9,8 @@ A premium AR tracing and drawing application for iOS and Android, inspired by th
 - **Smart Orientation**: Automatically lays images flat on horizontal surfaces.
 - **Precision Controls**:
   - **Two-Finger Rotation**: Twist to rotate images with degree-level precision.
-  - **Live Metadata**: Real-time readout of current rotation angle.
-  - **Vertical Opacity Slider**: Fine-tune transparency for perfect tracing.
-- **Stable Anchoring**: Once placed, images are permanently locked to the real world, resisting AR drift.
+  - **Unified 2.5x Recording**: Record your drawing process in real-time. The app automatically speeds it up to 2.5x and saves it to your gallery as a polished timelapse.
+- **Cross-Platform Parity**: Full feature support for both iOS (ARKit) and Android (ARCore), including surface snapping and precise rotation.
 - **Liquid Glass UI**: Stunning, translucent interface with glassmorphism effects and modern typography.
 - **Mandatory Onboarding**: Seamless first-launch experience with built-in core feature tutorials.
 

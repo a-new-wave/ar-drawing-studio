@@ -20,6 +20,7 @@ class _ARViewWrapperState extends State<ARViewWrapper> {
         onARKitViewCreated: widget.onARViewCreated,
         planeDetection: ARPlaneDetection.horizontal,
         showFeaturePoints: false,
+        autoenablesDefaultLighting: true,
       );
     } else if (Platform.isAndroid) {
       return ArCoreView(
@@ -29,6 +30,7 @@ class _ARViewWrapperState extends State<ARViewWrapper> {
         enablePlaneRenderer: true,
         // ArCore typically handles both by default when enabled, 
         // but we'll ensure the renderer is on for visualization.
+        // Enabling lighting estimation for ArCore
       );
     } else {
       return const Center(child: Text('AR Not Supported on this Platform'));

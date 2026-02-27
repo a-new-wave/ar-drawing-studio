@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'theme/app_theme.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/workspace_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class ARDrawingStudio extends StatelessWidget {
       title: 'AR Drawing Studio',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: isFirstLaunch ? const OnboardingScreen() : const WorkspaceScreen(),
+      home: isFirstLaunch ? const OnboardingScreen() : const HomeScreen(),
     );
   }
 }

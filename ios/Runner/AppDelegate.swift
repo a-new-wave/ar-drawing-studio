@@ -13,19 +13,18 @@ import UIKit
     let controller = window?.rootViewController as! FlutterViewController
     let channel = FlutterMethodChannel(name: "ar_drawing_app/timelapse", binaryMessenger: controller.binaryMessenger)
     channel.setMethodCallHandler { call, result in
-      if call.method == "encodeTimelapse" {
+      if call.method == "processVideo" {
         guard let args = call.arguments as? [String: Any],
-              let framesDir = args["framesDir"] as? String,
-              let frameCount = args["frameCount"] as? Int else {
-          result(FlutterError(code: "INVALID_ARGS", message: "Missing framesDir or frameCount", details: nil))
+              let videoPath = args["videoPath"] as? String else {
+          result(FlutterError(code: "INVALID_ARGS", message: "Missing videoPath", details: nil))
           return
         }
-        TimelapseEncoder.encode(framesDir: framesDir, frameCount: frameCount) { success, error in
+        TimelapseEncoder.process(videoPath: videoPath) { success, error in
           DispatchQueue.main.async {
             if success {
               result("saved")
             } else {
-              result(FlutterError(code: "ENCODE_FAILED", message: error ?? "Unknown error", details: nil))
+              result(FlutterError(code: "PROCESS_FAILED", message: error ?? "Unknown error", details: nil))
             }
           }
         }

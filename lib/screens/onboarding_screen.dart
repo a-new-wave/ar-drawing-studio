@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
-import 'workspace_screen.dart';
+import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -144,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (!context.mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const WorkspaceScreen(isFirstTimeInWorkspace: true)),
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
   }
 }
